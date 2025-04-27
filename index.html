@@ -165,7 +165,7 @@ Search
               const snippet = Array.from({length: 8}, (_, i) => row[`V${i+2}`]).filter(Boolean).join(' ');
               return { PMID: row.PMID, Snippet: snippet };
             });
-          } catch (err) { console.error('Error during init()',err); }
+          } catch (err) { console.error('💥 init() failed:',err); }
           this.loading = false;
         },
         search() {
