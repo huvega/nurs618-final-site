@@ -158,6 +158,7 @@ Search
             console.log('Fetch status:', response.status);   // NEW ①
             const csvText = await response.text();
             const parsed = Papa.parse(csvText, { header: true });
+            console.log('Rows parsed by Papa:', parsed.data.length);   // <-- new line
             console.log('Rows parsed:', parsed.data.length); // NEW ②
             // Build a simplified array with PMID and Snippet (concatenate non‑empty columns 2‑9)
             this.raw = parsed.data.map(row => {
