@@ -151,6 +151,7 @@ Search
           return this.results.slice(start, start + this.perPage);
         },
         async init() {
+          console.log('init() started');   // debug line
           this.loading = true;
           try {
             const response = await fetch('final_cleaned_data.csv');  // ensure file is in same directory
