@@ -155,14 +155,16 @@ Search
           this.loading = true;
           try {
             const response = await fetch('final_cleaned_data.csv');  // ensure file is in same directory
+            console.log('Fetch status:', response.status);   // NEW ①
             const csvText = await response.text();
             const parsed = Papa.parse(csvText, { header: true });
+            console.log('Rows parsed:', parsed.data.length); // NEW ②
             // Build a simplified array with PMID and Snippet (concatenate non‑empty columns 2‑9)
             this.raw = parsed.data.map(row => {
               const snippet = Array.from({length: 8}, (_, i) => row[`V${i+2}`]).filter(Boolean).join(' ');
               return { PMID: row.PMID, Snippet: snippet };
             });
-          } catch (err) { console.error(err); }
+          } catch (err) { console.error('Error during init()',err); }
           this.loading = false;
         },
         search() {
