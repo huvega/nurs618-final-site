@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>lncRNA‑Drug‑Gene Explorer</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font & icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>[x-cloak]{display:none}</style>
+  <!-- Alpine.js for simple reactivity (3 kB gzipped) -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Papa Parse for CSV parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.3/papaparse.min.js"></script>
+</head>
+<body class="font-inter bg-slate-50 text-gray-800">
+  <!-- Navbar -->
+  <header class="bg-white shadow sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+      <h1 class="text-xl sm:text-2xl font-semibold tracking-tight">lncRNA ‑ Drug ‑ Gene Explorer</h1>
+      <nav class="space-x-4 text-sm sm:text-base">
+        <a href="#home" class="hover:text-indigo-600">Home</a>
+        <a href="#explorer" class="hover:text-indigo-600">Dataset Explorer</a>
+        <a href="#visuals" class="hover:text-indigo-600">Visualizations</a>
+        <a href="#about" class="hover:text-indigo-600">About Project</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section id="home" class="relative overflow-hidden bg-gradient-to-r from-indigo-50 to-teal-50 py-20 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+      <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">Interactive exploration of >19k PubMed abstracts linking lncRNAs, drugs & genes</h2>
+      <p class="text-lg sm:text-xl text-gray-600">Built by <span class="font-semibold">Hugo Vega</span> for NURS 602 Final Project (CUNY SPS).</p>
+      <a href="#explorer" class="mt-8 inline-block rounded-2xl bg-indigo-600 px-6 py-3 text-white font-medium hover:bg-indigo-500 transition">Start Exploring</a>
+    </div>
+  </section>
+
+  <!-- Dataset Explorer -->
+  <section id="explorer" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" x-data="dataExplorer()">
+    <h3 class="text-2xl font-semibold mb-6">Search the cleaned dataset</h3>
+    <div class="mb-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+      <input type="text" x-model="query" placeholder="Search for gene, drug, disease…" class="w-full sm:w-80 shadow rounded-xl border-gray-300 focus:ring-indigo-500 focus:border-indigo-500">
+      <button @click="search" class="px-5 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500">Search</button>
+      <template x-if="loading">
+        <span class="text-sm text-gray-500">Loading…</span>
+      </template>
+    </div>
+
+    <!-- Results table -->
+    <div class="overflow-x-auto rounded-2xl shadow" x-cloak>
+      <table class="min-w-full divide-y divide-gray-200" x-show="results.length">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">PMID</th>
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Snippet</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-100">
+          <template x-for="row in pagedResults" :key="row.PMID">
+            <tr class="hover:bg-gray-50">
+              <td class="px-3 py-2 text-sm text-indigo-600 font-medium" x-text="row.PMID"></td>
+              <td class="px-3 py-2 text-sm" x-text="row.Snippet"></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+      <p class="text-sm text-gray-500 mt-4" x-show="results && !results.length">No matches found.</p>
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-4 flex items-center gap-2" x-show="totalPages>1">
+      <button :disabled="page===1" @click="page--" class="px-3 py-1 rounded-lg border text-sm disabled:opacity-30">Prev</button>
+      <span class="text-sm">Page <span x-text="page"></span> / <span x-text="totalPages"></span></span>
+      <button :disabled="page===totalPages" @click="page++" class="px-3 py-1 rounded-lg border text-sm disabled:opacity-30">Next</button>
+    </div>
+  </section>
+
+  <!-- Visualizations -->
+  <section id="visuals" class="bg-white py-16 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-5xl mx-auto">
+      <h3 class="text-2xl font-semibold mb-6">Static visualizations from the analysis</h3>
+      <div class="grid gap-8 md:grid-cols-2">
+        <!-- Replace the image sources with your exported PNG files -->
+        <figure class="rounded-2xl shadow overflow-hidden bg-gray-50">
+          <img src="top_drugs_bar.png" alt="Top drugs bar chart" class="w-full h-64 object-contain">
+          <figcaption class="p-4 text-sm text-gray-600">Figure 1. Frequency of top‑mentioned drugs in lncRNA studies.</figcaption>
+        </figure>
+        <figure class="rounded-2xl shadow overflow-hidden bg-gray-50">
+          <img src="gene_wordcloud.png" alt="Gene word cloud" class="w-full h-64 object-contain">
+          <figcaption class="p-4 text-sm text-gray-600">Figure 2. Word cloud of top genes.</figcaption>
+        </figure>
+        <figure class="rounded-2xl shadow overflow-hidden bg-gray-50">
+          <img src="drug_heatmap.png" alt="Drug heatmap" class="w-full h-64 object-contain">
+          <figcaption class="p-4 text-sm text-gray-600">Figure 3. Drug‑gene co‑occurrence heatmap.</figcaption>
+        </figure>
+        <figure class="rounded-2xl shadow overflow-hidden bg-gray-50">
+          <img src="gene_coheat.png" alt="Gene co‑occurrence heatmap" class="w-full h-64 object-contain">
+          <figcaption class="p-4 text-sm text-gray-600">Figure 4. Gene co‑occurrence heatmap (top 100 genes).</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- About -->
+  <section id="about" class="bg-slate-100 py-16 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-3xl mx-auto">
+      <h3 class="text-2xl font-semibold mb-4">About this project</h3>
+      <p class="mb-4">This website presents the exploratory data analysis performed for the NURS 602 Healthcare Finance & Management <em>Final Project</em>. Using more than 19,000 PubMed abstracts involving long non‑coding RNAs, we extracted key terms, drugs, and genes, and built visual summaries to highlight research trends and therapeutic targets.</p>
+      <p class="mb-4">All content and code are open‑source. View the repository and raw data on <a href="https://github.com/HugoVega/lncrna-data-explorer" class="text-indigo-600 underline">GitHub</a>.</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t py-6 text-center text-sm text-gray-500">
+    © <span id="year"></span> Hugo Vega. Built with Tailwind CSS & Alpine.js.
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    function dataExplorer() {
+      return {
+        raw: [],
+        results: [],
+        query: '',
+        page: 1,
+        perPage: 10,
+        loading: false,
+        get totalPages() { return Math.ceil(this.results.length / this.perPage) || 1; },
+        get pagedResults() {
+          const start = (this.page - 1) * this.perPage;
+          return this.results.slice(start, start + this.perPage);
+        },
+        async init() {
+          this.loading = true;
+          try {
+            const response = await fetch('final_cleaned_data.csv');  // ensure file is in same directory
+            const csvText = await response.text();
+            const parsed = Papa.parse(csvText, { header: true });
+            // Build a simplified array with PMID and Snippet (concatenate non‑empty columns 2‑9)
+            this.raw = parsed.data.map(row => {
+              const snippet = Array.from({length: 8}, (_, i) => row[`V${i+2}`]).filter(Boolean).join(' ');
+              return { PMID: row.PMID, Snippet: snippet };
+            });
+          } catch (err) { console.error(err); }
+          this.loading = false;
+        },
+        search() {
+          if (!this.query) { this.results = []; this.page = 1; return; }
+          const term = this.query.toLowerCase();
+          this.results = this.raw.filter(r => r.Snippet.toLowerCase().includes(term));
+          this.page = 1;
+        }
+      }
+    }
+  </script>
+</body>
+</html>
